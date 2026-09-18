@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pump 隨機抽題</title>
+<style>
+  :root{
+    --bg:#fff8f3;
+    --card:#ffffff;
+    --ink:#2d2a2a;
+    --muted:#7a7272;
+    --accent:#ff8e7a;
+    --accent2:#ffd7cf;
+    --line:#f0dfda;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    background:linear-gradient(180deg,#fff8f3 0%,#fffdfb 100%);
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    width:min(100%,720px);
+    min-height:100vh;
+    padding:18px 16px 28px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  header{padding:6px 4px 0}
+  h1{margin:0;font-size:clamp(24px,6vw,38px);letter-spacing:.02em}
+  .sub{margin-top:6px;color:var(--muted);font-size:15px}
+  .status{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:15px;color:var(--muted);padding:0 2px;
+  }
+  .card{
+    flex:1;
+    min-height:46vh;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:26px 20px;
+    box-shadow:0 10px 30px rgba(90,52,41,.08);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+  }
+  .qno{
+    align-self:flex-start;
+    background:var(--accent2);
+    color:#9b4b3f;
+    border-radius:999px;
+    padding:7px 12px;
+    font-weight:700;
+    font-size:15px;
+    margin-bottom:18px;
+  }
+  .question{
+    width:100%;
+    font-weight:800;
+    line-height:1.45;
+    letter-spacing:.02em;
+    font-size:clamp(34px,9vw,62px);
+    word-break:break-word;
+  }
+  .hint{margin-top:18px;color:#a29692;font-size:14px}
+  .controls{display:grid;grid-template-columns:1fr;gap:10px}
+  button{
+    appearance:none;border:0;border-radius:18px;padding:18px 16px;
+    font-size:22px;font-weight:800;cursor:pointer;
+    min-height:64px;
+  }
+  .draw{background:var(--accent);color:white;box-shadow:0 8px 18px rgba(255,142,122,.25)}
+  .reset{background:#fff;border:1px solid var(--line);color:#6d6461;font-size:17px;min-height:52px;padding:12px}
+  button:active{transform:scale(.985)}
+  @media (min-width:560px){
+    .app{padding:24px}
+    .card{padding:34px 28px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Pump 設定｜隨機抽題</h1>
+    <div class="sub">手機版・大字・不重複抽題</div>
+  </header>
+
+  <div class="status">
+    <span id="status">尚未抽題</span>
+    <span id="remain">共 7 題</span>
+  </div>
+
+  <main class="card">
+    <div class="qno" id="qno">準備好了嗎？</div>
+    <div class="question" id="question">按下「隨機抽一題」</div>
+    <div class="hint" id="hint">抽過的題目暫不重複</div>
+  </main>
+
+  <div class="controls">
+    <button class="draw" id="drawBtn">🎲 隨機抽一題</button>
+    <button class="reset" id="resetBtn">重新洗牌</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  '病人需於30分鐘內輸注總量500ml',
+  '幫浦設定為每小時40ml，總量500ml',
+  '醫囑輸注250ml於1小時30分鐘結束，請設定速率',
+  '幫浦設定為每小時100ml，輸注90分鐘',
+  '醫囑需於2小時內輸注300ml，請設定幫浦',
+  '幫浦設定\n輸注250ml/hr，總量500ml',
+  '醫囑要求在75分鐘內輸注500ml，請設定'
+];
+
+let pool = [];
+let count = 0;
+const qEl = document.getElementById('question');
+const qnoEl = document.getElementById('qno');
+const statusEl = document.getElementById('status');
+const remainEl = document.getElementById('remain');
+const drawBtn = document.getElementById('drawBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function reset(){
+  pool=shuffle(questions.map((q,i)=>({q,i})));
+  count=0;
+  qnoEl.textContent='準備好了嗎？';
+  qEl.textContent='按下「隨機抽一題」';
+  statusEl.textContent='尚未抽題';
+  remainEl.textContent=`共 ${questions.length} 題`;
+  drawBtn.textContent='🎲 隨機抽一題';
+}
+function draw(){
+  if(pool.length===0){
+    qnoEl.textContent='本輪完成';
+    qEl.textContent='7 題都抽完了！';
+    statusEl.textContent='已全部抽完';
+    remainEl.textContent='剩 0 題';
+    drawBtn.textContent='重新洗牌再抽';
+    pool=shuffle(questions.map((q,i)=>({q,i})));
+    count=0;
+    return;
+  }
+  const item=pool.pop();
+  count++;
+  qnoEl.textContent=`第 ${count} 抽｜原題 ${item.i+1}`;
+  qEl.textContent=item.q;
+  statusEl.textContent=`已抽 ${count} 題`;
+  remainEl.textContent=`剩 ${pool.length} 題`;
+  drawBtn.textContent=pool.length ? '🎲 再抽一題' : '完成本輪';
+}
+
+drawBtn.addEventListener('click', draw);
+resetBtn.addEventListener('click', reset);
+reset();
+</script>
+</body>
+</html>
